@@ -1,4 +1,5 @@
-<title>{{ mytitle }}</title>
+<title>{% block mytitle %}{% endblock %}</title>
+<h1>{{ mytitle }}</h1>
 <ul>
 {% for everyPara in parameter %}
     <li>{{ everyPara }}</li>
