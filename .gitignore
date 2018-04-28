@@ -1,3 +1,5 @@
 config.py
 config.json
+.vscode/
 *.txt
+*.pyc
