@@ -1,6 +1,6 @@
 from Crypto.Cipher import AES
 from Crypto import Random
-import  config
+import config
 
 def encode(msg, keyIndex):
     # format msg in lenth 224

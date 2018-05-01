@@ -27,14 +27,118 @@ class iotDB(object):
         return 1, result
     
     def createTable(self, tableName):
-        pass
+        if tableName =='User':
+            sqlCode ='CREATE TABLE User(' +\
+                     'userID UNSIGNED SMALLINT NOT NULL AUTO_INCREMENT,' +\
+                     'name TINYTEXT NOT NULL,' +\
+                     'description MEDUIMTEXT,' +\
+                     'gender TINYTEXT,' +\
+                     'PRIMARYKEY (userID));'
+        elif tableName =='dataDevice':
+            sqlCode ='CREATE TABLE dataDevice(' +\
+                     'dataDeviceID UNSIGNED SAMLLINT NOT NULL AUTO_INCREMENT,' +\
+                     'name TINYTEXT NOT NULL,' +\
+                     'description MEDUIMTEXT,' +\
+                     'location MEDUIMTEXT,' +\
+                     'user UNSIGNED SMALLKEY NOT NULL,' +\
+                     'FOREIGNKEY (user) REFERENCES User(userID),' +\
+                     'PRIMARYKEY (dataDeviceID));'
+        elif tableName =='switchDevice':
+            sqlCode ='CREATE TABLE switchDevice(' +\
+                     'switchDeviceID UNSIGNED SAMLLINT NOT NULL AUTO_INCREMENT,' +\
+                     'name TINYTEXT NOT NULL,' +\
+                     'description MEDUIMTEXT,' +\
+                     'location MEDUIMTEXT,' +\
+                     'user UNSIGNED SMALLKEY NOT NULL,' +\
+                     'status UNSIGNED SMALLINT NOT NULL' +\
+                     'FOREIGNKEY (user) REFERENCES User(userID),' +\
+                     'PRIMARYKEY (switchDeviceID));'
+        elif tableName =='dataValue':
+            sqlCode ='CREATE TABLE dataValue(' +\
+                     'dataValueID UNSIGNED MEDIUMINT NOT NULL AUTO_INCREMENT,' +\
+                     'time TIMESTAMP NOT NULL' +\
+                     'value FLOAT(16,8) NUT NULL' +\
+                     'device UNSIGNED SMALLINT NOT NULL' +\
+                     'FOREIGNKEY (device) REFERENCES dataDevice(dataDeviceID)' +\
+                     'PRIMARYKEY (dataValueID));'
+        else:
+            return 'what do you want to do?'
+        
+        res =self.executeSql(sqlCode, 'createTable:'+tableName)
+        return res
+
+    def deleteTable(self, tableName):
+        sqlCode ='DROP TABLE ' +tableName
+
+        res =self.executeSql(sqlCode, 'dropTable:'+tableName)
+        return res
+
+    def closeConnection(self):
+        res =self.dbConnection.close()
+        return res
     
 class userSet(iotDB):
 
     def __init__(self):
         iotDB.__init__(self)
         self._tableName ='users'
-        print 'userSet init done'
+        print 'User Set init done'
     
     def deleteUser(self, userName ='NONE'):
-        pass
+        if userName =='NONE':
+            sqlCode ='DELETE FROM ' +self._tableName
+        else:
+            sqlCode ='DELETE FROM ' +self._tableName +' WHERE name=' +userName
+        res =self.executeSql(sqlCode, 'deleteUser:'+userName)
+        return res
+    
+    def addUser(self, userName, description='NONE', gender='UNKNOWN'):
+        sqlCode ='INSERT INTO ' +self._tableName +' (name, description, gender) VALUES (\'' +userName +'\', \'' +description +'\', \'' +gender +'\');'
+        res =self.executeSql(sqlCode, 'addUser:'+userName)
+        return res
+
+    def queryUser(self, userName='ALL'):
+        sqlCode ='SELECT * FROM ' +self._tableName +' WHERE name=\'' +userName +'\';'
+        state, res =self.querySql(sqlCode, 'query:User')
+        if state:
+            return res
+        else:
+            return 'NOT FOUND'
+
+class dataDeviceSet(iotDB):
+    
+    def __init__(self):
+        iotDB.__init__(self)
+        self._tableName ='dataDevice'
+        print 'dataDevice Set init done'
+
+    def deleteDevice(self, deviceName='ALL'):
+        if deviceName =='ALL':
+            sqlCode ='DELETE FROM ' +self._tableName
+        else:
+            sqlCode ='DELETE FROM ' +self._tableName +' WHERE name=' +deviceName
+        res =self.executeSql(sqlCode, 'deleteDevice:'+deviceName)
+        return res
+
+    def addDevice(self, deviceName, user, description='NONE', location='NONE'):
+        sqlCode ='INSERT INTO ' +self._tableName +' (name, description, location, user) VALUES (\'' +deviceName +'\', \'' +description +'\', \'' +location +'\', \'' +user
+        res =self.executeSql(sqlCode, 'addDevice:'+deviceName)
+        return res
+    
+    def queryDevice(self, deviceName='ALL'):
+        if deviceName =='ALL':
+            sqlCode ='SELECT * FROM ' +self._tableName
+        else:
+            sqlCode ='SELECT * FROM ' +self._tableName +'WHERE name=\'' +deviceName +'\';'
+        state, res =self.querySql(sqlCode, 'query:dataDevice')
+        if state:
+            return res
+        else:
+            return 'NOT FOUND'
+
+class switchDeviceSet(iotDB):
+
+    def __init__(self):
+        iotDB.__init__(self)
+        self._tableName ='switchDevice'
+        print 'switchDevice Set init done'
