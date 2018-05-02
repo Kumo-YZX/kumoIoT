@@ -112,8 +112,8 @@ class dataDeviceSet(iotDB):
         self._tableName ='dataDevice'
         print 'dataDevice Set init done'
 
-    def deleteDevice(self, deviceName='ALL'):
-        if deviceName =='ALL':
+    def deleteDevice(self, deviceName='ALLD'):
+        if deviceName =='ALLD':
             sqlCode ='DELETE FROM ' +self._tableName
         else:
             sqlCode ='DELETE FROM ' +self._tableName +' WHERE name=' +deviceName
@@ -121,16 +121,17 @@ class dataDeviceSet(iotDB):
         return res
 
     def addDevice(self, deviceName, user, description='NONE', location='NONE'):
-        sqlCode ='INSERT INTO ' +self._tableName +' (name, description, location, user) VALUES (\'' +deviceName +'\', \'' +description +'\', \'' +location +'\', \'' +user
-        res =self.executeSql(sqlCode, 'addDevice:'+deviceName)
+        sqlCode ='INSERT INTO ' +self._tableName +' (name, description, location, user) VALUES (\'' +\
+                 deviceName +'\', \'' +description +'\', \'' +location +'\', \'' +user +'\');'
+        res =self.executeSql(sqlCode, 'addDataDevice:'+deviceName)
         return res
     
-    def queryDevice(self, deviceName='ALL'):
-        if deviceName =='ALL':
+    def queryDevice(self, deviceName='ALLD'):
+        if deviceName =='ALLD':
             sqlCode ='SELECT * FROM ' +self._tableName
         else:
             sqlCode ='SELECT * FROM ' +self._tableName +'WHERE name=\'' +deviceName +'\';'
-        state, res =self.querySql(sqlCode, 'query:dataDevice')
+        state, res =self.querySql(sqlCode, 'query:dataDevice:')
         if state:
             return res
         else:
@@ -142,3 +143,59 @@ class switchDeviceSet(iotDB):
         iotDB.__init__(self)
         self._tableName ='switchDevice'
         print 'switchDevice Set init done'
+
+    def deleteDevice(self, deviceName='ALLS'):
+        if deviceName =='ALLS':
+            sqlCode ='DELETE FROM ' +self._tableName
+        else:
+            sqlCode ='DELETE FROM ' +self._tableName +' WHERE name=' +deviceName
+        res =self.executeSql(sqlCode, 'deleteDevice:'+deviceName)
+        return res
+    
+    def addDevice(self, deviceName, user, description='NONE', location='NONE', status=0):
+        sqlCode ='INSERT INTO ' +self._tableName +' (name, description, location, user, status) VALUES (\'' +\
+                 deviceName +'\', \'' +description +'\', \'' +location +'\', \'' +user +'\', \'' +status +'\');'
+        res =self.executeSql(sqlCode, 'addSwitchDevice:'+deviceName)
+        return res
+
+    def queryDevice(self, deviceName='ALLS'):
+        if deviceName =='ALLS':
+            sqlCode ='SELECT * FROM ' +self._tableName
+        else:
+            sqlCode ='SELECT * FROM ' +self._tableName +'WHERE name=\'' +deviceName +'\';'
+        state, res =self.querySql(sqlCode, 'query:switchDevice:')
+        if state:
+            return res
+        else:
+            return 'NOT FOUND'
+    
+class dataValueSet(iotDB):
+
+    def __init__(self):
+        iotDB.__init__(self)
+        self._tableName ='dataValue'
+        print 'switchDevice Set init done'
+
+    def deleteValue(self, dataValueID=-1):
+        if dataValueID ==-1:
+            sqlCode ='DELETE FROM ' +self._tableName
+        else:
+            sqlCode ='DELETE FROM ' +self._tableName +' WHERE dataValueID=' +dataValueID
+        res =self.executeSql(sqlCode, 'deletedataValue:'+str(dataValueID))
+        return res
+
+    def addDataValue(self, device, value=0):
+        import datetime
+        nowTime =datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S')
+        sqlCode ='INSERT INTO ' +self._tableName +' (time, value, device) VALUES (\'' +\
+                 nowTime +'\', \'' +value +'\', \'' +device +'\';'
+        res =self.executeSql(sqlCode, 'addDataValue:'+str(value))
+        return res
+    
+    def queryData(self, device):
+        sqlCode ='SELECT * FROM ' +self._tableName +'WHERE device=\'' +device +'\';'
+        state, res =self.querySql(sqlCode, 'query:DataValue:'+str(device))
+        if state:
+            return res
+        else:
+            return 'NOT FOUND'

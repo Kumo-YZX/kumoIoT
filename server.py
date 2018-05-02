@@ -46,7 +46,7 @@ class uploadData(tornado.web.RequestHandler):
         userIp =self.request.remote_ip
         encryptData =self.request.query
         print 'connection from : ' +userIp +'Data : ' +encryptData
-        decryptData =crypter.decode(encryptData, 0)
+        decryptData =crypter.decode(encryptData)
         paraDict ={}
         for everyData in decryptData.split('&'):
             oneData =everyData.split('=')

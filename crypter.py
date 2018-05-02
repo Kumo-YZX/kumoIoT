@@ -35,5 +35,5 @@ def decode(msg):
     return decodeMsg
 
 if __name__ =="__main__":
-    msg =encode('{"user":"kumohiraki", "token":"45dd2dfe18462d60", "parameter":"temperature", "value":34}', 1)
+    msg =encode('example string', 1)
     decode(msg)
