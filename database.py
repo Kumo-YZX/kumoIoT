@@ -1,9 +1,11 @@
 import pymysql.cursors
+import config
 
 class iotDB(object):
 
-    def __init__(self, host ='localhost', user ='root', password ='passwd', db ='myiotDB'):
+    def __init__(self, host ='localhost', port=config.dbport, user =config.dbuser, password =config.dbpasswd, db ='myiotDB'):
         self.dbConnection =pymysql.connect(host =host,
+                                           port =port,
                                            user =user,
                                            password =password,
                                            db =db,
@@ -19,53 +21,52 @@ class iotDB(object):
         return 1
     
     def querySql(self, sqlCode, description='query'):
-        result ={}
         with self.dbConnection.cursor() as cursor:
             cursor.execute(sqlCode)
-            result =cursor.fetchone()
+            result =cursor.fetchall()
         print description +':done'
-        return 1, result
+        return result
     
     def createTable(self, tableName):
         if tableName =='User':
             sqlCode ='CREATE TABLE User(' +\
-                     'userID UNSIGNED SMALLINT NOT NULL AUTO_INCREMENT,' +\
+                     'userID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,' +\
                      'name CHAR(16) NOT NULL,' +\
-                     'description MEDUIMTEXT,' +\
+                     'description MEDIUMTEXT,' +\
                      'gender TINYTEXT,' +\
-                     'PRIMARYKEY (userID));'
+                     'PRIMARY KEY (userID));'
         elif tableName =='dataDevice':
             sqlCode ='CREATE TABLE dataDevice(' +\
-                     'dataDeviceID UNSIGNED SAMLLINT NOT NULL AUTO_INCREMENT,' +\
+                     'dataDeviceID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,' +\
                      'name CHAR(16) NOT NULL,' +\
-                     'description MEDUIMTEXT,' +\
-                     'location MEDUIMTEXT,' +\
-                     'user UNSIGNED SMALLKEY NOT NULL,' +\
-                     'FOREIGNKEY (user) REFERENCES User(userID),' +\
-                     'PRIMARYKEY (dataDeviceID));'
+                     'description MEDIUMTEXT,' +\
+                     'location MEDIUMTEXT,' +\
+                     'user SMALLINT UNSIGNED NOT NULL,' +\
+                     'FOREIGN KEY (user) REFERENCES User(userID),' +\
+                     'PRIMARY KEY (dataDeviceID));'
         elif tableName =='switchDevice':
             sqlCode ='CREATE TABLE switchDevice(' +\
-                     'switchDeviceID UNSIGNED SAMLLINT NOT NULL AUTO_INCREMENT,' +\
+                     'switchDeviceID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,' +\
                      'name CHAR(16) NOT NULL,' +\
-                     'description MEDUIMTEXT,' +\
-                     'location MEDUIMTEXT,' +\
-                     'user UNSIGNED SMALLKEY NOT NULL,' +\
-                     'status UNSIGNED SMALLINT NOT NULL' +\
-                     'FOREIGNKEY (user) REFERENCES User(userID),' +\
-                     'PRIMARYKEY (switchDeviceID));'
+                     'description MEDIUMTEXT,' +\
+                     'location MEDIUMTEXT,' +\
+                     'user SMALLINT UNSIGNED NOT NULL,' +\
+                     'status SMALLINT UNSIGNED NOT NULL,' +\
+                     'FOREIGN KEY (user) REFERENCES User(userID),' +\
+                     'PRIMARY KEY (switchDeviceID));'
         elif tableName =='dataValue':
             sqlCode ='CREATE TABLE dataValue(' +\
-                     'dataValueID UNSIGNED MEDIUMINT NOT NULL AUTO_INCREMENT,' +\
-                     'time TIMESTAMP NOT NULL' +\
-                     'value FLOAT(16,8) NUT NULL' +\
-                     'device UNSIGNED SMALLINT NOT NULL' +\
-                     'FOREIGNKEY (device) REFERENCES dataDevice(dataDeviceID)' +\
-                     'PRIMARYKEY (dataValueID));'
-        elif tableName =='key':
-            sqlCode ='CREATE TABLE key(' +\
-                     'keyID UNSIGNED TINYINT NOT NULL AUTO_INCREMENT,' +\
-                     'keyStr CHAR(16) NOT NULL' +\
-                     'PRIMARYKEY (keyID));'
+                     'dataValueID MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT,' +\
+                     'time TIMESTAMP NOT NULL,' +\
+                     'value FLOAT(16,8) NOT NULL,' +\
+                     'device SMALLINT UNSIGNED NOT NULL,' +\
+                     'FOREIGN KEY (device) REFERENCES dataDevice(dataDeviceID),' +\
+                     'PRIMARY KEY (dataValueID));'
+        elif tableName =='keyTable':
+            sqlCode ='CREATE TABLE keyTable(' +\
+                     'keyID SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,' +\
+                     'keyStr CHAR(16) NOT NULL,' +\
+                     'PRIMARY KEY (keyID));'
         else:
             return 'what do you want to do?'
         
@@ -86,7 +87,7 @@ class userSet(iotDB):
 
     def __init__(self):
         iotDB.__init__(self)
-        self._tableName ='users'
+        self._tableName ='User'
         print 'User Set init done'
     
     def deleteUser(self, userName ='NONE'):
@@ -102,13 +103,13 @@ class userSet(iotDB):
         res =self.executeSql(sqlCode, 'addUser:'+userName)
         return res
 
-    def queryUser(self, userName='ALL'):
-        sqlCode ='SELECT * FROM ' +self._tableName +' WHERE name=\'' +userName +'\';'
-        state, res =self.querySql(sqlCode, 'query:User')
-        if state:
-            return res
+    def queryUser(self, userName='ALLU'):
+        if userName =='ALLU':
+            sqlCode ='SELECT * FROM ' +self._tableName
         else:
-            return 'NOT FOUND'
+            sqlCode ='SELECT * FROM ' +self._tableName +' WHERE name=\'' +userName +'\';'
+        res =self.querySql(sqlCode, 'query:User')
+        return res
 
 class dataDeviceSet(iotDB):
     
@@ -136,11 +137,8 @@ class dataDeviceSet(iotDB):
             sqlCode ='SELECT * FROM ' +self._tableName
         else:
             sqlCode ='SELECT * FROM ' +self._tableName +'WHERE name=\'' +deviceName +'\';'
-        state, res =self.querySql(sqlCode, 'query:dataDevice:')
-        if state:
-            return res
-        else:
-            return 'NOT FOUND'
+        res =self.querySql(sqlCode, 'query:dataDevice:')
+        return res
 
 class switchDeviceSet(iotDB):
 
@@ -168,11 +166,8 @@ class switchDeviceSet(iotDB):
             sqlCode ='SELECT * FROM ' +self._tableName
         else:
             sqlCode ='SELECT * FROM ' +self._tableName +'WHERE name=\'' +deviceName +'\';'
-        state, res =self.querySql(sqlCode, 'query:switchDevice:')
-        if state:
-            return res
-        else:
-            return 'NOT FOUND'
+        res =self.querySql(sqlCode, 'query:switchDevice:')
+        return res
     
 class dataValueSet(iotDB):
 
@@ -191,25 +186,22 @@ class dataValueSet(iotDB):
 
     def addDataValue(self, device, value=0):
         import datetime
-        nowTime =datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S')
+        nowTime =datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
         sqlCode ='INSERT INTO ' +self._tableName +' (time, value, device) VALUES (\'' +\
-                 nowTime +'\', \'' +str(value) +'\', \'' +str(device) +'\';'
+                 nowTime +'\', \'' +str(value) +'\', \'' +str(device) +'\');'
         res =self.executeSql(sqlCode, 'addDataValue:'+str(value))
         return res
     
     def queryData(self, device):
         sqlCode ='SELECT * FROM ' +self._tableName +'WHERE device=\'' +device +'\';'
-        state, res =self.querySql(sqlCode, 'query:DataValue:'+str(device))
-        if state:
-            return res
-        else:
-            return 'NOT FOUND'
+        res =self.querySql(sqlCode, 'query:DataValue:'+str(device))
+        return res
 
 class keySet(iotDB):
 
     def __init__(self):
         iotDB.__init__(self)
-        self._tableName ='key'
+        self._tableName ='keyTable'
         print 'key Set init done'
 
     def deleteKey(self, keyID=-1):
@@ -225,45 +217,75 @@ class keySet(iotDB):
             print 'wrong key length!'
             return 0
         else:
-            sqlCode ='INSERT INTO ' +self._tableName +' (keyStr) VALUES (\'' +keyStr +'\';'
+            sqlCode ='INSERT INTO ' +self._tableName +' (keyStr) VALUES (\'' +keyStr +'\');'
         res =self.executeSql(sqlCode, 'addKeyStr:' +keyStr)
         return res
     
     def verfiyKey(self, keyID):
         sqlCode ='SELECT * FROM ' +self._tableName +'WHERE device=\'' +keyID +'\';'
-        state, res =self.querySql(sqlCode, 'query:DataValue:'+str(keyID))
-        if state:
-            return res
-        else:
-            return 'NOT FOUND'
+        res =self.querySql(sqlCode, 'query:DataValue:'+str(keyID))
+        return res
 
 def main():
     import sys
-    import config
     con =sys.argv[1]
     if con =='create':
-        mydb =iotDB(password=config.dbpasswd)
-        for tableName in ['User','dataDevice','switchDevice','dataValue','key']:
+        mydb =iotDB()
+        for tableName in ['keyTable']:
             mydb.createTable(tableName)
     elif con =='adduser':
-        infos =sys.argv[2].split('&')
+        infos =sys.argv[2].split('-')
         mydb =userSet()
         mydb.addUser(infos[0],infos[1],infos[2])
     elif con =='adddatad':
-        infos =sys.argv[2].split('&')
+        infos =sys.argv[2].split('-')
         mydb =dataDeviceSet()
         mydb.addDevice(infos[0],infos[1])
     elif con =='addswid':
-        infos =sys.argv[2].split('&')
+        infos =sys.argv[2].split('-')
         mydb =switchDeviceSet()
         mydb.addDevice(infos[0],infos[1])
     elif con =='adddatav':
-        infos =sys.argv[2].split('&')
+        infos =sys.argv[2].split('-')
         mydb =dataValueSet()
         mydb.addDataValue(infos[0],infos[1])
     elif con =='addkey':
         mydb =keySet()
-        mydb.addKey(sys.argv[0])
+        mydb.addKey(sys.argv[2])
+    elif con =='schuser':
+        mydb =userSet()
+        if len(sys.argv) ==3:
+            res =mydb.queryUser(sys.argv[2])
+        else:
+            res =mydb.queryUser()
+        for every in res:
+            print every
+    elif con =='schdatad':
+        mydb =dataDeviceSet()
+        if len(sys.argv) ==3:
+            res =mydb.queryDevice(sys.argv[3])
+        else:
+            res =mydb.queryDevice()
+        for every in res:
+            print every
+    elif con =='schswid':
+        mydb =switchDeviceSet()
+        if len(sys.argv) ==3:
+            res =mydb.queryDevice(sys.argv[3])
+        else:
+            res =mydb.queryDevice()
+        for every in res:
+            print every
+    elif con =='schdatav':
+        mydb =dataValueSet()
+        if len(sys.argv) ==3:
+            res =mydb.queryData(sys.argv[3])
+        else:
+            res =mydb.queryData('1')
+        for every in res:
+            print every
+    else:
+        print 'what do you want to do?'
 
 if __name__ =="__main__":
     main()
