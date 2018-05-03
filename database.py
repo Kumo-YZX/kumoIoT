@@ -2,7 +2,7 @@ import pymysql.cursors
 
 class iotDB(object):
 
-    def __init__(self, host ='localhost', user ='root', password ='passwd', db ='wxappDB'):
+    def __init__(self, host ='localhost', user ='root', password ='passwd', db ='myiotDB'):
         self.dbConnection =pymysql.connect(host =host,
                                            user =user,
                                            password =password,
@@ -30,14 +30,14 @@ class iotDB(object):
         if tableName =='User':
             sqlCode ='CREATE TABLE User(' +\
                      'userID UNSIGNED SMALLINT NOT NULL AUTO_INCREMENT,' +\
-                     'name TINYTEXT NOT NULL,' +\
+                     'name CHAR(16) NOT NULL,' +\
                      'description MEDUIMTEXT,' +\
                      'gender TINYTEXT,' +\
                      'PRIMARYKEY (userID));'
         elif tableName =='dataDevice':
             sqlCode ='CREATE TABLE dataDevice(' +\
                      'dataDeviceID UNSIGNED SAMLLINT NOT NULL AUTO_INCREMENT,' +\
-                     'name TINYTEXT NOT NULL,' +\
+                     'name CHAR(16) NOT NULL,' +\
                      'description MEDUIMTEXT,' +\
                      'location MEDUIMTEXT,' +\
                      'user UNSIGNED SMALLKEY NOT NULL,' +\
@@ -46,7 +46,7 @@ class iotDB(object):
         elif tableName =='switchDevice':
             sqlCode ='CREATE TABLE switchDevice(' +\
                      'switchDeviceID UNSIGNED SAMLLINT NOT NULL AUTO_INCREMENT,' +\
-                     'name TINYTEXT NOT NULL,' +\
+                     'name CHAR(16) NOT NULL,' +\
                      'description MEDUIMTEXT,' +\
                      'location MEDUIMTEXT,' +\
                      'user UNSIGNED SMALLKEY NOT NULL,' +\
@@ -61,6 +61,11 @@ class iotDB(object):
                      'device UNSIGNED SMALLINT NOT NULL' +\
                      'FOREIGNKEY (device) REFERENCES dataDevice(dataDeviceID)' +\
                      'PRIMARYKEY (dataValueID));'
+        elif tableName =='key':
+            sqlCode ='CREATE TABLE key(' +\
+                     'keyID UNSIGNED TINYINT NOT NULL AUTO_INCREMENT,' +\
+                     'keyStr CHAR(16) NOT NULL' +\
+                     'PRIMARYKEY (keyID));'
         else:
             return 'what do you want to do?'
         
@@ -122,7 +127,7 @@ class dataDeviceSet(iotDB):
 
     def addDevice(self, deviceName, user, description='NONE', location='NONE'):
         sqlCode ='INSERT INTO ' +self._tableName +' (name, description, location, user) VALUES (\'' +\
-                 deviceName +'\', \'' +description +'\', \'' +location +'\', \'' +user +'\');'
+                 deviceName +'\', \'' +description +'\', \'' +location +'\', \'' +str(user) +'\');'
         res =self.executeSql(sqlCode, 'addDataDevice:'+deviceName)
         return res
     
@@ -154,7 +159,7 @@ class switchDeviceSet(iotDB):
     
     def addDevice(self, deviceName, user, description='NONE', location='NONE', status=0):
         sqlCode ='INSERT INTO ' +self._tableName +' (name, description, location, user, status) VALUES (\'' +\
-                 deviceName +'\', \'' +description +'\', \'' +location +'\', \'' +user +'\', \'' +status +'\');'
+                 deviceName +'\', \'' +description +'\', \'' +location +'\', \'' +str(user) +'\', \'' +str(status) +'\');'
         res =self.executeSql(sqlCode, 'addSwitchDevice:'+deviceName)
         return res
 
@@ -180,7 +185,7 @@ class dataValueSet(iotDB):
         if dataValueID ==-1:
             sqlCode ='DELETE FROM ' +self._tableName
         else:
-            sqlCode ='DELETE FROM ' +self._tableName +' WHERE dataValueID=' +dataValueID
+            sqlCode ='DELETE FROM ' +self._tableName +' WHERE dataValueID=' +str(dataValueID)
         res =self.executeSql(sqlCode, 'deletedataValue:'+str(dataValueID))
         return res
 
@@ -188,7 +193,7 @@ class dataValueSet(iotDB):
         import datetime
         nowTime =datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S')
         sqlCode ='INSERT INTO ' +self._tableName +' (time, value, device) VALUES (\'' +\
-                 nowTime +'\', \'' +value +'\', \'' +device +'\';'
+                 nowTime +'\', \'' +str(value) +'\', \'' +str(device) +'\';'
         res =self.executeSql(sqlCode, 'addDataValue:'+str(value))
         return res
     
@@ -199,3 +204,66 @@ class dataValueSet(iotDB):
             return res
         else:
             return 'NOT FOUND'
+
+class keySet(iotDB):
+
+    def __init__(self):
+        iotDB.__init__(self)
+        self._tableName ='key'
+        print 'key Set init done'
+
+    def deleteKey(self, keyID=-1):
+        if keyID<0:
+            sqlCode ='DELETE FROM ' +self._tableName
+        else:
+            sqlCode ='DELETE FROM ' +self._tableName +' HWERE keyID=' +keyID
+        res =self.executeSql(sqlCode, 'deleteKey:'+str(keyID))
+        return res
+
+    def addKey(self, keyStr):
+        if len(keyStr)!=16:
+            print 'wrong key length!'
+            return 0
+        else:
+            sqlCode ='INSERT INTO ' +self._tableName +' (keyStr) VALUES (\'' +keyStr +'\';'
+        res =self.executeSql(sqlCode, 'addKeyStr:' +keyStr)
+        return res
+    
+    def verfiyKey(self, keyID):
+        sqlCode ='SELECT * FROM ' +self._tableName +'WHERE device=\'' +keyID +'\';'
+        state, res =self.querySql(sqlCode, 'query:DataValue:'+str(keyID))
+        if state:
+            return res
+        else:
+            return 'NOT FOUND'
+
+def main():
+    import sys
+    import config
+    con =sys.argv[1]
+    if con =='create':
+        mydb =iotDB(password=config.dbpasswd)
+        for tableName in ['User','dataDevice','switchDevice','dataValue','key']:
+            mydb.createTable(tableName)
+    elif con =='adduser':
+        infos =sys.argv[2].split('&')
+        mydb =userSet()
+        mydb.addUser(infos[0],infos[1],infos[2])
+    elif con =='adddatad':
+        infos =sys.argv[2].split('&')
+        mydb =dataDeviceSet()
+        mydb.addDevice(infos[0],infos[1])
+    elif con =='addswid':
+        infos =sys.argv[2].split('&')
+        mydb =switchDeviceSet()
+        mydb.addDevice(infos[0],infos[1])
+    elif con =='adddatav':
+        infos =sys.argv[2].split('&')
+        mydb =dataValueSet()
+        mydb.addDataValue(infos[0],infos[1])
+    elif con =='addkey':
+        mydb =keySet()
+        mydb.addKey(sys.argv[0])
+
+if __name__ =="__main__":
+    main()
