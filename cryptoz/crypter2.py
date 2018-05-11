@@ -1,8 +1,14 @@
+def loadModule(name, path):
+    import os, imp
+    return imp.load_source(name, os.path.join(os.path.dirname(__file__), path))
+
+
 from Crypto.Cipher import AES
 from Crypto import Random
-import config
 
 def encode(msg, keyIndex):
+    loadModule('config', '../config.py')
+    import config
     # format msg in lenth 224
     if len(msg) <232:
         msg +=(232-len(msg))*'&'
@@ -24,16 +30,5 @@ def encode(msg, keyIndex):
 
     return encodeMsg
 
-def decode(msg):
-    keyIndex =int(msg[0:8])
-    print keyIndex
-    iv =msg[8:24]
-    decrypter =AES.new(config.aesKey[keyIndex], AES.MODE_CFB, iv)
-    decodeMsg =decrypter.decrypt(msg[24:256])
-    print decodeMsg
-
-    return decodeMsg
-
 if __name__ =="__main__":
     msg =encode('example string', 1)
-    decode(msg)

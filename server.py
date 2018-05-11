@@ -3,7 +3,9 @@ import tornado.web
 import tornado.template
 import jinja2
 import threading
-import crypter
+from cryptoz import crypter
+from dbapi import database
+from chatapi import tgapi
 
 class myTemplate(object):
     def __init__(self, template_instance):
@@ -44,16 +46,30 @@ class uploadData(tornado.web.RequestHandler):
     
     def post(self):
         userIp =self.request.remote_ip
-        encryptData =self.request.query
-        print 'connection from : ' +userIp +'Data : ' +encryptData
+        encryptData =self.request.body
+        print 'connection from : ' +userIp #+' Data : ' +encryptData
         decryptData =crypter.decode(encryptData)
         paraDict ={}
         for everyData in decryptData.split('&'):
+            if len(everyData) ==0:
+                break
             oneData =everyData.split('=')
             paraDict[oneData[0]] =oneData[1]
-        viewList =['User : '+paraDict['user'],'Token : '+paraDict['token'],'Value : '+paraDict['value']]
-
-        self.render('homepage.html', mytitle='You are using encrypted POST method : ' +userIp, parameter=viewList)
+        # viewList =['User : '+paraDict['user'],'Device : '+paraDict['device'], 'Token : '+paraDict['token'],'Value : '+paraDict['value']]
+        dataddb =database.dataDeviceSet()
+        valuedb =database.dataValueSet()
+        userdb =database.userSet()
+        device =dataddb.queryDevice(paraDict['device'])
+        print device[0]
+        if paraDict['token'] ==device[0]['token']:
+            res =valuedb.addDataValue(device[0]['dataDeviceID'], paraDict['value'])
+            user =userdb.queryUserByID(device[0]['user'])
+            tgMsg =tgapi.message()
+            tgMsg.sendMsg(user[0]['usertgID'], paraDict['device']+' have a new value: '+paraDict['value'])
+            self.write({'status':True,'httpstatus':200,'device':paraDict['device']})
+        else:
+            self.write({'status':False,'httpstatus':200,'device':''})
+        # self.render('homepage.html', mytitle='You are using encrypted POST method : ' +userIp, parameter=['ok'])
 
 class catchData(tornado.web.RequestHandler):
     def get(self):
@@ -72,7 +88,7 @@ def startApp():
 
 def main():
     app =startApp()
-    app.listen(8093)
+    app.listen(8080)
     tornado.ioloop.IOLoop.current().start()
 
 if __name__ =="__main__":
